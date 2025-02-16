@@ -14,13 +14,13 @@ A powerful and flexible test fixture management system for TypeScript/JavaScript
 ## Installation
 
 ```bash
+bun add fixturekit
+# or
 npm install fixturekit
 # or
 yarn add fixturekit
 # or
 pnpm add fixturekit
-# or
-bun add fixturekit
 ```
 
 ## Usage

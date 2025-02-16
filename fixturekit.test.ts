@@ -154,6 +154,7 @@ describe('fixture dependency graph', () => {
 		await f(async ({ c }) => {
 			expect(executionOrder).toEqual(['c:setup']);
 		})();
+
 		expect(executionOrder).toEqual(['c:setup', 'c:teardown']);
 	});
 });
@@ -347,5 +348,15 @@ describe('extractDestructuredParams', () => {
 	test('should handle arrow function with multiple nested spreads toString', () => {
 		const input = '({...a, b: {...c}, ...d}) => ({})';
 		expect(extractDestructuredParams(input)).toEqual(['...a', 'b', '...d']);
+	});
+
+	test('should handle function with no arguments', () => {
+		const input = 'function test() {}';
+		expect(extractDestructuredParams(input)).toEqual([]);
+	});
+
+	test('should handle arrow function with no arguments', () => {
+		const input = '() => {}';
+		expect(extractDestructuredParams(input)).toEqual([]);
 	});
 });
