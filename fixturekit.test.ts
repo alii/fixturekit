@@ -157,6 +157,59 @@ describe('fixture dependency graph', () => {
 
 		expect(executionOrder).toEqual(['c:setup', 'c:teardown']);
 	});
+
+	test('should evaluate dependencies in correct order with timing', async () => {
+		const executionTimes: { fixture: string; start: number; end: number }[] = [];
+		const startTime = Date.now();
+
+		const f = fixtures<{
+			a: string;
+			b: string;
+			c: string;
+		}>({
+			a: async use => {
+				const start = Date.now() - startTime;
+				await Bun.sleep(100); // Simulate some async work
+				executionTimes.push({ fixture: 'a', start, end: Date.now() - startTime });
+				await use('a');
+			},
+
+			b: async (use, { a }) => {
+				const start = Date.now() - startTime;
+				await Bun.sleep(100); // Simulate some async work
+				executionTimes.push({ fixture: 'b', start, end: Date.now() - startTime });
+				await use('b');
+			},
+
+			c: async (use, { b }) => {
+				const start = Date.now() - startTime;
+				await Bun.sleep(100); // Simulate some async work
+				executionTimes.push({ fixture: 'c', start, end: Date.now() - startTime });
+				await use('c');
+			},
+		});
+
+		await f(async ({ c }) => {
+			// Verify that fixtures were evaluated in the correct order
+			expect(executionTimes.length).toBe(3);
+
+			// Check that a started first
+			expect(executionTimes[0].fixture).toBe('a');
+
+			// Check that b started after a ended
+			expect(executionTimes[1].fixture).toBe('b');
+			expect(executionTimes[1].start).toBeGreaterThanOrEqual(executionTimes[0].end);
+
+			// Check that c started after b ended
+			expect(executionTimes[2].fixture).toBe('c');
+			expect(executionTimes[2].start).toBeGreaterThanOrEqual(executionTimes[1].end);
+
+			// The total time should be roughly 300ms (3 x 100ms sleeps)
+			const totalTime = executionTimes[2].end - executionTimes[0].start;
+			expect(totalTime).toBeGreaterThanOrEqual(300);
+			expect(totalTime).toBeLessThan(400); // Allow some wiggle room but not too much
+		})();
+	});
 });
 
 describe('extractDestructuredParams', () => {
