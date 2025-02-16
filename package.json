@@ -1,0 +1,16 @@
+{
+	"name": "fixturekit",
+	"type": "module",
+	"exports": {
+		"./package.json": "./package.json",
+		"./src/*": "./src/*.ts"
+	},
+	"scripts": {
+		"build": "tsup --dts --format esm,cjs src/index.ts"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"tsup": "^8.3.6",
+		"typescript": "^5.7.3"
+	}
+}
