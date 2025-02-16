@@ -112,6 +112,7 @@ describe('fixture dependency graph', () => {
 		await f(async ({ bottom }) => {
 			expect(executionOrder).toEqual(['top:setup', 'left:setup', 'right:setup', 'bottom:setup']);
 		})();
+
 		expect(executionOrder).toEqual([
 			'top:setup',
 			'left:setup',

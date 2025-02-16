@@ -1,9 +1,30 @@
 {
 	"name": "fixturekit",
 	"type": "module",
+	"version": "0.0.1",
+	"author": "Alistair Smith <hi@alistair.sh>",
+	"license": "MIT",
+	"sideEffects": false,
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/alii/fixturekit.git"
+	},
+	"homepage": "https://github.com/alii/fixturekit#readme",
+	"bugs": {
+		"url": "https://github.com/alii/fixturekit/issues"
+	},
+	"sponsor": {
+		"url": "https://github.com/sponsors/alii"
+	},
+	"main": "./dist/index.cjs",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		"./package.json": "./package.json",
-		"./src/*": "./src/*.ts"
+		".": {
+			"import": "./dist/index.js",
+			"require": "./dist/index.cjs"
+		}
 	},
 	"scripts": {
 		"build": "tsup --dts --format esm,cjs src/index.ts"
