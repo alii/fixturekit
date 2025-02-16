@@ -26,6 +26,11 @@
 			"require": "./dist/index.cjs"
 		}
 	},
+	"files": [
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
 	"scripts": {
 		"build": "tsup --dts --format esm,cjs src/index.ts"
 	},
