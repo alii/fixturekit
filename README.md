@@ -7,7 +7,6 @@ A powerful and flexible test fixture management system for TypeScript/JavaScript
 - 🔄 Automatic fixture setup and teardown
 - 📦 Dependency management between fixtures
 - 🔍 Type-safe fixture access
-- ⚡ Parallel fixture setup when possible
 - 🎯 Selective fixture initialization
 - 🚫 Circular dependency detection
 
@@ -205,7 +204,7 @@ test(
 
 ### Fixture Dependencies
 
-Fixtures can depend on other fixtures. Dependencies are automatically detected and managed:
+Fixtures can depend on other fixtures. Dependencies are automatically detected and managed. All fixtures are executed sequentially in dependency order - even if some fixtures could theoretically run in parallel, they will be executed one after another for predictable behavior:
 
 ```typescript
 const testFixtures = fixtures({
@@ -226,6 +225,8 @@ const testFixtures = fixtures({
 	},
 });
 ```
+
+For example, in a diamond dependency pattern where both `left` and `right` depend on `top`, and `bottom` depends on both `left` and `right`, the execution will be strictly sequential: `top` → `left` → `right` → `bottom`.
 
 ### Async Setup and Teardown
 
