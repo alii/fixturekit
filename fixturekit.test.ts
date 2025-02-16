@@ -213,7 +213,7 @@ describe('extractDestructuredParams', () => {
 		expect(extractDestructuredParams(input)).toEqual(['user', 'settings']);
 	});
 
-	test('should handle deeply nested desrtucturing', () => {
+	test('should handle deeply nested destructuring', () => {
 		const input = 'function test({ user: { name, age }, settings: { theme } }) {}';
 		expect(extractDestructuredParams(input)).toEqual(['user', 'settings']);
 	});
