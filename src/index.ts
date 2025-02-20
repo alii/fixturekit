@@ -204,6 +204,12 @@ function topologicalSort<T extends PropertyKey>(nodes: T[], edges: Map<T, T[]>):
 	return result;
 }
 
+export class FixtureTeardownFailureError extends Error {
+	constructor(public readonly errors: Error[]) {
+		super('Fixture teardown failed');
+	}
+}
+
 /**
  * Creates a fixture management system that handles setup and teardown of test fixtures.
  * Manages dependencies between fixtures and ensures proper initialization and cleanup order.
@@ -242,7 +248,6 @@ export function fixtures<
 		return async (...args: Args) => {
 			const fixtures: { [K in Keys]: Fixtures[K] | undefined } = {} as any;
 			const teardowns: (() => Promise<void>)[] = [];
-			const allKeys = new Set<Keys>();
 			const setupPromises = new Map<Keys, Promise<void>>();
 
 			const requiredKeys = new Set<Keys>();
@@ -269,7 +274,9 @@ export function fixtures<
 					continue;
 				}
 
-				const { promise: setupDone, resolve: resolveSetup } = deferred<void>();
+				const { promise: testCompletionPromise, resolve: testDidComplete } = deferred<void>();
+				const { promise: setupDone, resolve: resolveSetup, reject: rejectSetup } = deferred<void>();
+
 				setupPromises.set(key, setupDone);
 
 				const depsObj = Object.fromEntries(
@@ -278,47 +285,58 @@ export function fixtures<
 						.map(k => [k, fixtures[k]])
 				) as Omit<Fixtures, typeof key>;
 
-				const { promise: teardownDone, resolve: resolveTeardown } = deferred<void>();
 				let useCalled = false;
 
 				const use = async (value: Fixtures[typeof key]) => {
 					if (useCalled) {
 						throw new Error('Cannot call use() more than once');
 					}
+
 					useCalled = true;
 					fixtures[key] = value;
+
 					resolveSetup();
-					await teardownDone;
+
+					// use() resolves after the teardown start promise resolves
+					await testCompletionPromise;
 				};
 
-				const teardownPromise = (async () => {
-					await getters[key](use, depsObj);
+				const fixtureDidCompletePromise = (async () => {
+					const promise = getters[key](use, depsObj);
 
-					if (!useCalled) {
-						resolveSetup();
+					try {
+						await promise;
+					} catch (e) {
+						if (useCalled) {
+							throw e;
+						} else {
+							rejectSetup(e as Error);
+						}
 					}
 				})();
 
-				teardowns.unshift(() => {
-					resolveTeardown();
-					return teardownPromise;
+				teardowns.unshift(async () => {
+					testDidComplete();
+					await fixtureDidCompletePromise;
 				});
-
-				allKeys.add(key);
 
 				await setupDone;
 			}
 
-			const result = await fn(
-				fixtures as {
-					[K in Keys]: Fixtures[K];
-				},
-				...args
-			);
+			const result = await fn(fixtures as { [K in Keys]: Fixtures[K] }, ...args);
 
-			// Tear down in dependency order (already reversed by unshift)
+			const teardownErrors: Error[] = [];
+
 			for (const teardown of teardowns) {
-				await teardown();
+				try {
+					await teardown();
+				} catch (e) {
+					teardownErrors.push(e as Error);
+				}
+			}
+
+			if (teardownErrors.length > 0) {
+				throw new FixtureTeardownFailureError(teardownErrors);
 			}
 
 			return result;
