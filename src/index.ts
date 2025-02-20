@@ -301,19 +301,13 @@ export function fixtures<
 					await testCompletionPromise;
 				};
 
-				const fixtureDidCompletePromise = (async () => {
-					const promise = getters[key](use, depsObj);
-
-					try {
-						await promise;
-					} catch (e) {
-						if (useCalled) {
-							throw e;
-						} else {
-							rejectSetup(e as Error);
-						}
+				const fixtureDidCompletePromise = getters[key](use, depsObj).catch(e => {
+					if (useCalled) {
+						throw e;
+					} else {
+						rejectSetup(e as Error);
 					}
-				})();
+				});
 
 				teardowns.unshift(async () => {
 					testDidComplete();
